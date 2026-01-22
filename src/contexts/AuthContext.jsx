@@ -2,13 +2,15 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 
 const AuthContext = createContext(null);
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // fetch /api/auth/me to see if logged in
-    fetch('http://localhost:5001/api/auth/me', { credentials: 'include' })
+    fetch(`${API_URL}/api/auth/me`, { credentials: 'include' })
       .then((res) => {
         if (!res.ok) throw new Error('Not authenticated');
         return res.json();
@@ -21,7 +23,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = async (email, password) => {
-    const res = await fetch('http://localhost:5001/api/auth/login', {
+    const res = await fetch(`${API_URL}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
@@ -34,7 +36,7 @@ export function AuthProvider({ children }) {
   };
 
   const register = async (name, email, password) => {
-    const res = await fetch('http://localhost:5001/api/auth/register', {
+    const res = await fetch(`${API_URL}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, password }),
@@ -46,7 +48,7 @@ export function AuthProvider({ children }) {
   };
 
   const logout = async () => {
-    await fetch('http://localhost:5001/api/auth/logout', { method: 'POST', credentials: 'include' });
+    await fetch(`${API_URL}/api/auth/logout`, { method: 'POST', credentials: 'include' });
     setUser(null);
   };
 
