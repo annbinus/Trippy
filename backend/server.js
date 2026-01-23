@@ -19,19 +19,25 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 const app = express();
 
 // Middleware
-// Dev-friendly CORS: allow specific localhost origins and enable credentials
+// CORS: allow localhost and production origins
 const allowedOrigins = [
   "http://localhost:5173",
   "http://127.0.0.1:5173",
   "http://localhost:5174",
   "http://127.0.0.1:5174",
-];
+  // Add your Vercel domains here
+  process.env.FRONTEND_URL, // Set this in your backend environment variables
+].filter(Boolean); // Remove undefined values
 
 app.use(cors({
   origin: function(origin, callback) {
     // allow requests with no origin (curl, server-to-server)
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    // Also allow any vercel.app subdomain
+    if (origin && origin.endsWith('.vercel.app')) {
       return callback(null, true);
     }
     callback(new Error('Not allowed by CORS'));
