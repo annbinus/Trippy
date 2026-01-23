@@ -113,7 +113,7 @@ h1, h2, h3 {
 .form-container {
   position: absolute;
   left: 50%;
-  top: 50%;
+  top: 60%;
   transform: translate(-50%, -50%);
   transition: all 0.7s;
 }
@@ -136,6 +136,33 @@ h1, h2, h3 {
   width: 18rem;
   background-color: transparent; /* match page background */
 }
+
+/* Fade-up animation for form elements */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.form input,
+.form button,
+.form p {
+  animation: fadeUp 0.5s ease-out forwards;
+  opacity: 0;
+}
+
+.form input:nth-child(1) { animation-delay: 0.1s; }
+.form input:nth-child(2),
+.form span + input { animation-delay: 0.2s; }
+.form input:nth-child(3),
+.form span + span + input { animation-delay: 0.3s; }
+.form button { animation-delay: 0.4s; }
+.form p { animation-delay: 0.5s; }
 
 .form input {
   border: 1px solid var(--brown-dark);
@@ -546,3 +573,502 @@ h1, h2, h3 {
 .w-full {
   width: 100%;
 }
+
+/* =============================
+   EXTRACTED INLINE STYLES
+============================= */
+
+/* Auth Title Positioning */
+.auth-title-top-auth { top: 4rem; }
+.auth-title-top-landing { top: 7rem; }
+
+/* Font Weight Utilities */
+.fw-light { font-weight: 300; }
+.fw-bold { font-weight: 700; }
+
+/* Adventure Bar Button Container */
+.adventure-btn-container {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+/* Home - Fill Scroll Override */
+.fill-scroll-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding-right: 1rem;
+  overflow: hidden;
+}
+
+/* Map Panel Full Height */
+.panel-full-height { height: 100%; }
+.map-full { width: 100%; height: 100%; }
+
+/* Destination Card Relative */
+.destination-card { position: relative; }
+
+/* Delete Button */
+.delete-btn {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: transparent;
+  color: #999;
+  border: none;
+  border-radius: 0;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 300;
+  line-height: 1;
+  opacity: 0.5;
+  transition: all 0.2s ease;
+}
+.delete-btn:hover {
+  opacity: 1;
+  color: #666;
+}
+
+/* =============================
+   ITINERARY PAGE STYLES
+============================= */
+
+/* Page Container */
+.itinerary-page {
+  min-height: 100vh;
+  background-color: #f9fafb;
+  padding: 2rem;
+}
+
+/* Header Section */
+.itinerary-header { margin-bottom: 2rem; }
+
+/* Back Button */
+.back-btn {
+  padding: 0.5rem 1rem;
+  margin-bottom: 1rem;
+  background-color: transparent;
+  border: 1px solid #ddd;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+/* Section Title */
+.section-title { margin-bottom: 0.5rem; }
+
+/* Margin Utilities */
+.mb-05 { margin-bottom: 0.5rem; }
+.mb-1 { margin-bottom: 1rem; }
+.mb-1-5 { margin-bottom: 1.5rem; }
+.mb-2 { margin-bottom: 2rem; }
+.mt-05 { margin-top: 0.5rem; }
+.mt-1 { margin-top: 1rem; }
+.m-0 { margin: 0; }
+
+/* Destination Selector */
+.destination-selector { margin-bottom: 2rem; }
+.selector-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+.selector-dropdown {
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid #ddd;
+  font-size: 1rem;
+  min-width: 250px;
+  background-color: white;
+}
+
+/* Destination Info */
+.destination-info-title {
+  margin-bottom: 0.5rem;
+  font-size: 1.5rem;
+}
+
+/* Add Button */
+.add-item-btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  border: none;
+  background-color: #fb923c;
+  color: white;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* Itinerary Items Header */
+.items-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+/* Empty State */
+.empty-state-container {
+  padding: 2rem;
+  text-align: center;
+}
+.empty-state-hint {
+  font-size: 0.875rem;
+  color: #666;
+  margin-top: 0.5rem;
+}
+
+/* Scrollable Container */
+.scroll-container { max-height: 600px; overflow-y: auto; }
+
+/* Day Section */
+.day-section { margin-bottom: 2rem; }
+.day-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #fb923c;
+  border-bottom: 2px solid #fb923c;
+  padding-bottom: 0.5rem;
+}
+
+/* Items Column */
+.items-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Itinerary Item Card */
+.itinerary-item-card {
+  padding: 1rem;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-left: 4px solid #fb923c;
+  border-radius: 0.5rem;
+}
+
+/* Item Note Text */
+.item-note {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+.item-note-fallback {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+/* =============================
+   SAVED ITINERARY PAGE STYLES
+============================= */
+
+/* Header with flex */
+.header-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  align-items: center;
+}
+
+/* Content Panel */
+.content-panel {
+  background-color: #ffffff;
+  padding: 2rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+}
+
+/* Details Header */
+.details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+/* Days Badge */
+.days-badge {
+  background: linear-gradient(135deg, #fb923c, #f97316);
+  color: white;
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Save Button */
+.save-btn {
+  background: #fb923c;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Loading/Empty Text */
+.loading-text {
+  color: #666;
+  font-style: italic;
+}
+
+/* Day Content Box */
+.day-content-box {
+  padding: 1rem;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-left: 4px solid #fb923c;
+  border-radius: 0.5rem;
+}
+
+/* Day Title Input */
+.day-title-input {
+  background: transparent;
+  border: none;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #fb923c;
+  outline: none;
+  width: 100%;
+}
+
+/* Activity Card */
+.activity-card {
+  padding: 1rem;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  border-left: 3px solid #3b82f6;
+  cursor: grab;
+  transition: all 0.15s ease;
+}
+.activity-card-dragging {
+  background-color: #f0f0f0;
+  border: 2px dashed #fb923c;
+  opacity: 0.5;
+}
+.activity-card-dimmed {
+  background-color: #e5e7eb80;
+  opacity: 0.4;
+}
+.activity-card-hover {
+  transform: scale(1.02);
+  z-index: 10;
+}
+
+/* Activity Header */
+.activity-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Drag Handle */
+.drag-handle {
+  font-size: 1.2rem;
+  cursor: grab;
+  user-select: none;
+}
+
+/* Activity Icon */
+.activity-icon { user-select: none; }
+
+/* Activity Title */
+.activity-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+/* Time Input */
+.time-input {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-left: auto;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Activity Content */
+.activity-content {
+  font-size: 0.875rem;
+  color: #4b5563;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Drop Indicator */
+.drop-indicator {
+  transition: all 0.2s ease;
+  border-radius: 2px;
+}
+.drop-indicator-active {
+  height: 4px;
+  background-color: #fb923c;
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 0 0 2px #fb923c40;
+}
+
+/* Textarea for Day Content */
+.day-textarea {
+  width: 100%;
+  min-height: 150px;
+  background: transparent;
+  border: none;
+  font-size: 1rem;
+  line-height: 1.5;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+}
+
+/* =============================
+   GENERATE ITINERARY PAGE
+============================= */
+
+/* Preferences Label Margin */
+.pref-label-mt { margin-top: 1rem; }
+
+/* Days Input Width */
+.days-input { width: 5rem; }
+
+/* Generate Button Full Width */
+.generate-btn-full {
+  margin-top: 1rem;
+  width: 100%;
+}
+
+/* Flex Utilities */
+.flex-row { display: flex; flex-direction: row; }
+.flex-col { display: flex; flex-direction: column; }
+.flex-center { display: flex; align-items: center; justify-content: center; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
+.gap-05 { gap: 0.5rem; }
+.gap-1 { gap: 1rem; }
+
+/* Text Center */
+.text-center { text-align: center; }
+
+/* Padding Utilities */
+.p-2 { padding: 2rem; }
+
+/* =============================
+   MODAL FORM STYLES
+============================= */
+
+/* Modal Title */
+.modal-form-title {
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+/* Form Group */
+.form-group { margin-bottom: 1rem; }
+.form-group-lg { margin-bottom: 1.5rem; }
+
+/* Form Label */
+.form-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+/* Required Indicator */
+.required { color: #ef4444; }
+
+/* Type Buttons Container */
+.type-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Type Button */
+.type-btn {
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #ddd;
+  background-color: white;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 400;
+}
+.type-btn-active {
+  border: 2px solid #fb923c;
+  background-color: #fff7ed;
+  font-weight: 600;
+}
+
+/* Form Input */
+.form-input {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid #ddd;
+  font-size: 1rem;
+}
+
+/* Form Textarea */
+.form-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid #ddd;
+  font-size: 1rem;
+  resize: vertical;
+}
+
+/* Form Actions */
+.form-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+/* Cancel Button */
+.btn-cancel {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid #ddd;
+  background-color: white;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+/* Submit Button */
+.btn-submit {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  border: none;
+  background-color: #fb923c;
+  color: white;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.btn-submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Textarea Height */
+.textarea-sm { height: 6rem; }

@@ -24,7 +24,7 @@ export default function Auth() {
       {isAuthView && <BackButton onClick={() => navigate("/auth")} />}
 
       {/* Title */}
-      <div className="auth-title" style={{ top: isAuthView ? '4rem' : '7rem' }}>
+      <div className={`auth-title ${isAuthView ? 'auth-title-top-auth' : 'auth-title-top-landing'}`}>
         <Title view={view} />
       </div>
 

@@ -29,7 +29,7 @@ export default function MapSection({ destinations, onSelect }) {
 
   return (
     <div className="map-section">
-      <div className="panel card-wide" style={{ height: '100%' }}>
+      <div className="panel card-wide panel-full-height">
         <Map
           mapboxAccessToken={MAPBOX_TOKEN}
           initialViewState={{
@@ -37,8 +37,8 @@ export default function MapSection({ destinations, onSelect }) {
             longitude: 0,
             zoom: 1.4,
           }}
-          mapStyle="mapbox://styles/mapbox/light-v11"
-          style={{ width: "100%", height: "100%" }}
+          mapStyle="mapbox://styles/mapbox/standard-satellite"
+          className="map-full"
         >
           {validDestinations.map((dest) => (
             <Marker

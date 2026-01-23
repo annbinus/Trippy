@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import AddItineraryItemModal from "./AddItineraryItemModal";
+import { getAuthHeaders } from "../../contexts/AuthContext";
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
 export default function ItineraryPage() {
   const { itineraryId } = useParams();
@@ -19,7 +22,9 @@ export default function ItineraryPage() {
   useEffect(() => {
     if (!itineraryId) return;
 
-    fetch(`http://localhost:5001/api/itineraries/${itineraryId}`)
+    fetch(`${API_URL}/api/itineraries/${itineraryId}`, {
+      headers: getAuthHeaders()
+    })
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch itinerary");
         return res.json();
@@ -36,7 +41,9 @@ export default function ItineraryPage() {
   useEffect(() => {
     if (!itineraryId) return;
 
-    fetch(`http://localhost:5001/api/itineraries/${itineraryId}/destinations`)
+    fetch(`${API_URL}/api/itineraries/${itineraryId}/destinations`, {
+      headers: getAuthHeaders()
+    })
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch destinations");
         return res.json();
@@ -74,7 +81,9 @@ export default function ItineraryPage() {
     }
 
     setLoading(true);
-    fetch(`http://localhost:5001/api/itinerary-items?destination_id=${selectedDestinationId}`)
+    fetch(`${API_URL}/api/itinerary-items?destination_id=${selectedDestinationId}`, {
+      headers: getAuthHeaders()
+    })
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch itinerary items");
         return res.json();
@@ -114,46 +123,31 @@ export default function ItineraryPage() {
   });
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#f9fafb", padding: "2rem" }}>
+    <div className="itinerary-page">
       {/* Header */}
-      <div style={{ marginBottom: "2rem" }}>
+      <div className="itinerary-header">
         <button
           onClick={() => navigate("/home")}
-          style={{
-            padding: "0.5rem 1rem",
-            marginBottom: "1rem",
-            backgroundColor: "transparent",
-            border: "1px solid #ddd",
-            borderRadius: "0.5rem",
-            cursor: "pointer",
-            fontSize: "0.875rem",
-          }}
+          className="back-btn"
         >
           ← Back to Destinations
         </button>
         
-        <h1 className="h2-md" style={{ marginBottom: "0.5rem" }}>
+        <h1 className="h2-md mb-05">
           {itinerary?.title || "Itinerary"}
         </h1>
       </div>
 
       {/* Destination Selector */}
       {destinations.length > 1 && (
-        <div style={{ marginBottom: "2rem" }}>
-          <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 600 }}>
+        <div className="destination-selector">
+          <label className="selector-label">
             Select Destination:
           </label>
           <select
             value={selectedDestinationId || ""}
             onChange={(e) => setSelectedDestinationId(parseInt(e.target.value))}
-            style={{
-              padding: "0.75rem",
-              borderRadius: "0.5rem",
-              border: "1px solid #ddd",
-              fontSize: "1rem",
-              minWidth: "250px",
-              backgroundColor: "white",
-            }}
+            className="selector-dropdown"
           >
             {destinations.map((dest) => (
               <option key={dest.id} value={dest.id}>
@@ -166,8 +160,8 @@ export default function ItineraryPage() {
 
       {/* Selected Destination Info */}
       {selectedDestination && (
-        <div className="panel" style={{ marginBottom: "2rem" }}>
-          <h2 style={{ marginBottom: "0.5rem", fontSize: "1.5rem" }}>
+        <div className="panel mb-2">
+          <h2 className="destination-info-title">
             {selectedDestination.name}
           </h2>
           {selectedDestination.description && (
@@ -178,19 +172,10 @@ export default function ItineraryPage() {
 
       {/* Add Button */}
       {selectedDestinationId && (
-        <div style={{ marginBottom: "1rem" }}>
+        <div className="mb-1">
           <button
             onClick={() => setShowAddModal(true)}
-            style={{
-              padding: "0.75rem 1.5rem",
-              borderRadius: "0.5rem",
-              border: "none",
-              backgroundColor: "#fb923c",
-              color: "white",
-              cursor: "pointer",
-              fontSize: "0.875rem",
-              fontWeight: 600,
-            }}
+            className="add-item-btn"
           >
             + Add Item
           </button>
@@ -199,8 +184,8 @@ export default function ItineraryPage() {
 
       {/* Itinerary Items by Day */}
       <div className="panel">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-          <h2 className="h2-md" style={{ margin: 0 }}>
+        <div className="items-header">
+          <h2 className="h2-md m-0">
             Itinerary Items
           </h2>
         </div>
@@ -208,50 +193,34 @@ export default function ItineraryPage() {
         {loading ? (
           <p className="muted">Loading itinerary...</p>
         ) : itineraryItems.length === 0 ? (
-          <div style={{ padding: "2rem", textAlign: "center" }}>
+          <div className="empty-state-container">
             <p className="muted">No itinerary items yet for this destination</p>
-            <p style={{ fontSize: "0.875rem", color: "#666", marginTop: "0.5rem" }}>
+            <p className="empty-state-hint">
               Add museums, restaurants, and activities to plan your trip
             </p>
           </div>
         ) : (
-          <div style={{ maxHeight: "600px", overflowY: "auto" }}>
+          <div className="scroll-container">
             {sortedDays.map((day) => (
-              <div key={day} style={{ marginBottom: "2rem" }}>
-                <h3
-                  style={{
-                    fontSize: "1.125rem",
-                    fontWeight: 600,
-                    marginBottom: "1rem",
-                    color: "#fb923c",
-                    borderBottom: "2px solid #fb923c",
-                    paddingBottom: "0.5rem",
-                  }}
-                >
+              <div key={day} className="day-section">
+                <h3 className="day-title">
                   Day {day}
                 </h3>
-                <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                <div className="items-column">
                   {itemsByDay[day]
                     .sort((a, b) => (a.position || 0) - (b.position || 0))
                     .map((item) => (
                       <div
                         key={item.id}
-                        className="card card-item"
-                        style={{
-                          padding: "1rem",
-                          backgroundColor: "#ffffff",
-                          border: "1px solid #e5e7eb",
-                          borderLeft: "4px solid #fb923c",
-                          borderRadius: "0.5rem",
-                        }}
+                        className="itinerary-item-card"
                       >
                         <div>
                           {item.notes ? (
-                            <p style={{ margin: 0, fontSize: "1rem", lineHeight: "1.5" }}>
+                            <p className="item-note">
                               {item.notes}
                             </p>
                           ) : (
-                            <p className="muted" style={{ margin: 0, fontSize: "0.875rem" }}>
+                            <p className="muted item-note-fallback">
                               Itinerary item #{item.position || item.id}
                             </p>
                           )}
@@ -271,7 +240,9 @@ export default function ItineraryPage() {
           onClose={() => setShowAddModal(false)}
           onAdd={(newItem) => {
             // Refetch to get updated list with full data
-            fetch(`http://localhost:5001/api/itinerary-items?destination_id=${selectedDestinationId}`)
+            fetch(`${API_URL}/api/itinerary-items?destination_id=${selectedDestinationId}`, {
+              headers: getAuthHeaders()
+            })
               .then((res) => res.json())
               .then((data) => {
                 const filteredItems = Array.isArray(data)

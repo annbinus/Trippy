@@ -41,7 +41,10 @@ router.post("/register", async (req, res) => {
     );
 
     const user = rows[0];
-    res.status(201).json({ user });
+    // Set JWT token after registration for auto-login
+    const token = signToken(user);
+    // Return token in response body instead of cookie
+    res.status(201).json({ user, token });
   } catch (err) {
     console.error("POST /api/register error:", err);
     res.status(500).json({ error: "Failed to register" });
@@ -67,11 +70,11 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    // Return user without password and set HttpOnly cookie
+    // Return user without password and JWT token
     const safeUser = { id: user.id, name: user.name, email: user.email };
     const token = signToken(safeUser);
-    res.cookie("token", token, { httpOnly: true, sameSite: "lax" });
-    res.json({ user: safeUser });
+    // Return token in response body instead of cookie
+    res.json({ user: safeUser, token });
   } catch (err) {
     console.error("POST /api/login error:", err);
     res.status(500).json({ error: "Failed to login" });
@@ -81,7 +84,7 @@ router.post("/login", async (req, res) => {
 // GET /api/auth/me
 router.get("/me", async (req, res) => {
   try {
-    const token = req.cookies?.token || req.headers.authorization?.replace(/^Bearer\s+/, "");
+    const token = req.headers.authorization?.replace(/^Bearer\s+/, "") || req.cookies?.token;
     const payload = verifyToken(token);
     if (!payload) return res.status(401).json({ error: "Not authenticated" });
     res.json({ user: { id: payload.id, name: payload.name, email: payload.email } });

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { getAuthHeaders } from "../../contexts/AuthContext";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || "";
 
@@ -24,11 +25,14 @@ const PREFERENCE_OPTIONS = [
 
 export default function GenerateItinerary({ onSave }) {
   const [selectedPreferences, setSelectedPreferences] = useState([]);
+  const [prefInput, setPrefInput] = useState("");
+  const [showPrefSuggestions, setShowPrefSuggestions] = useState(false);
   const [days, setDays] = useState(3);
   const [loading, setLoading] = useState(false);
   const [streamingText, setStreamingText] = useState("");
   const [dayBoxes, setDayBoxes] = useState([]); // Array of day content strings
   const abortRef = useRef(null);
+  const prefInputRef = useRef(null);
   
   // Destination search state
   const [destinations, setDestinations] = useState([]);
@@ -42,6 +46,7 @@ export default function GenerateItinerary({ onSave }) {
   const [tiktokUrls, setTiktokUrls] = useState("");
   const [extracting, setExtracting] = useState(false);
   const [extractedInfo, setExtractedInfo] = useState([]);
+  const [showExtractedModal, setShowExtractedModal] = useState(false);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -145,14 +150,28 @@ export default function GenerateItinerary({ onSave }) {
       
       // Convert destinations to format backend expects
       const destPayload = destinations.map(d => ({ name: d.name }));
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
       
-      const res = await fetch("http://localhost:5001/api/generate", {
+      // Collect tips from extracted TikTok info
+      const tiktokTips = extractedInfo
+        .map(info => info.tips)
+        .filter(t => t && t !== 'Could not extract')
+        .join(". ");
+      
+      // Convert preference IDs to labels, keep custom text as-is
+      const preferencesText = selectedPreferences.map(pref => {
+        const presetOption = PREFERENCE_OPTIONS.find(p => p.id === pref);
+        return presetOption ? presetOption.label : pref;
+      }).join(", ");
+      
+      const res = await fetch(`${API_URL}/api/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           destinations: destPayload, 
-          preferences: selectedPreferences.join(", "), 
-          days 
+          preferences: preferencesText, 
+          days,
+          tiktokTips: tiktokTips || undefined
         }),
         signal: abortRef.current.signal
       });
@@ -236,7 +255,8 @@ export default function GenerateItinerary({ onSave }) {
 
     setExtracting(true);
     try {
-      const res = await fetch("http://localhost:5001/api/extract-tiktok", {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+      const res = await fetch(`${API_URL}/api/extract-tiktok`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ urls })
@@ -301,42 +321,40 @@ export default function GenerateItinerary({ onSave }) {
           <h1 className="generate-title">Generate Trip Plan</h1>
           <p className="generate-subtitle">Enter your destinations and preferences</p>
 
-          {/* TikTok Import Section */}
-          <div className="tiktok-section">
-            <div className="tiktok-header">
-              <span className="tiktok-icon">🎵</span>
-              <span>Import from TikTok</span>
+          {/* TikTok Import Section - Compact */}
+          <div className="tiktok-section-compact">
+            <div className="tiktok-input-row">
+              <input
+                type="text"
+                className="input tiktok-input-compact"
+                value={tiktokUrls}
+                onChange={(e) => setTiktokUrls(e.target.value)}
+                placeholder="Paste TikTok URL..."
+              />
+              <button
+                onClick={handleExtractTikTok}
+                className="extract-btn-compact"
+                disabled={extracting || !tiktokUrls.trim()}
+              >
+                {extracting ? (
+                  <span className="loading-dots">
+                    <span className="dot"></span>
+                    <span className="dot"></span>
+                    <span className="dot"></span>
+                  </span>
+                ) : "Extract"}
+              </button>
             </div>
-            <textarea
-              className="textarea tiktok-input"
-              value={tiktokUrls}
-              onChange={(e) => setTiktokUrls(e.target.value)}
-              rows={2}
-              placeholder="Paste TikTok URLs (one per line)&#10;https://www.tiktok.com/@user/video/..."
-            />
-            <button
-              onClick={handleExtractTikTok}
-              className="extract-btn"
-              disabled={extracting || !tiktokUrls.trim()}
-            >
-              {extracting ? "Extracting..." : "Extract Travel Info"}
-            </button>
             
-            {/* Extracted info cards */}
+            {/* Button to view extracted info */}
             {extractedInfo.length > 0 && (
-              <div className="extracted-list">
-                {extractedInfo.map((info, idx) => (
-                  <div key={idx} className="extracted-card">
-                    <button 
-                      className="remove-extracted"
-                      onClick={() => removeExtractedItem(idx)}
-                    >×</button>
-                    <div className="extracted-destination">{info.destination || "Unknown location"}</div>
-                    {info.tips && <div className="extracted-tips">{info.tips}</div>}
-                  </div>
-                ))}
-            </div>
-          )}
+              <button
+                onClick={() => setShowExtractedModal(true)}
+                className="view-extracted-btn-compact"
+              >
+                📋 {extractedInfo.length} extracted
+              </button>
+            )}
         </div>
 
         <div className="divider">
@@ -388,31 +406,109 @@ export default function GenerateItinerary({ onSave }) {
           </div>
         )}
 
-        <label className="block mb-2 font-semibold" style={{ marginTop: '1rem' }}>Preferences</label>
-        <div className="preferences-grid">
-          {PREFERENCE_OPTIONS.map((pref) => (
-            <button
-              key={pref.id}
-              type="button"
-              className={`preference-chip ${selectedPreferences.includes(pref.id) ? 'selected' : ''}`}
-              onClick={() => {
-                setSelectedPreferences(prev => 
-                  prev.includes(pref.id)
-                    ? prev.filter(p => p !== pref.id)
-                    : [...prev, pref.id]
-                );
+        <label className="block mb-2 font-semibold pref-label-mt">Preferences</label>
+        <div className="preferences-input-container">
+          <div className="preferences-tags-input" onClick={() => prefInputRef.current?.focus()}>
+            {selectedPreferences.map((pref) => {
+              const presetOption = PREFERENCE_OPTIONS.find(p => p.id === pref);
+              return (
+                <span key={pref} className="preference-tag">
+                  {presetOption ? presetOption.label : pref}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedPreferences(prev => prev.filter(p => p !== pref));
+                    }}
+                  >
+                    ×
+                  </button>
+                </span>
+              );
+            })}
+            <input
+              ref={prefInputRef}
+              type="text"
+              value={prefInput}
+              placeholder={selectedPreferences.length === 0 ? "Click to see options or type custom..." : "Add more..."}
+              className="preferences-text-input"
+              onChange={(e) => {
+                setPrefInput(e.target.value);
+                setShowPrefSuggestions(true);
               }}
-            >
-              {pref.label}
-            </button>
-          ))}
+              onFocus={() => setShowPrefSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowPrefSuggestions(false), 150)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && prefInput.trim()) {
+                  e.preventDefault();
+                  const newPref = prefInput.trim();
+                  // Check if it matches a preset option
+                  const matchingPreset = PREFERENCE_OPTIONS.find(
+                    p => p.label.toLowerCase() === newPref.toLowerCase()
+                  );
+                  const prefToAdd = matchingPreset ? matchingPreset.id : newPref;
+                  if (!selectedPreferences.includes(prefToAdd)) {
+                    setSelectedPreferences(prev => [...prev, prefToAdd]);
+                  }
+                  setPrefInput('');
+                  setShowPrefSuggestions(false);
+                }
+                if (e.key === 'Backspace' && !prefInput && selectedPreferences.length > 0) {
+                  setSelectedPreferences(prev => prev.slice(0, -1));
+                }
+                if (e.key === 'Escape') {
+                  setShowPrefSuggestions(false);
+                }
+              }}
+            />
+          </div>
+          {showPrefSuggestions && PREFERENCE_OPTIONS.some(p => !selectedPreferences.includes(p.id)) && (
+            <div className="pref-suggestions-dropdown">
+              {PREFERENCE_OPTIONS
+                .filter(p => 
+                  !selectedPreferences.includes(p.id) &&
+                  p.label.toLowerCase().includes(prefInput.toLowerCase())
+                )
+                .map(pref => (
+                  <div
+                    key={pref.id}
+                    className="pref-suggestion-item"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      setSelectedPreferences(prev => [...prev, pref.id]);
+                      setPrefInput('');
+                      setShowPrefSuggestions(false);
+                    }}
+                  >
+                    {pref.label}
+                  </div>
+                ))
+              }
+              {prefInput.trim() && !PREFERENCE_OPTIONS.some(p => 
+                p.label.toLowerCase() === prefInput.toLowerCase()
+              ) && (
+                <div
+                  className="pref-suggestion-item pref-custom"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    if (!selectedPreferences.includes(prefInput.trim())) {
+                      setSelectedPreferences(prev => [...prev, prefInput.trim()]);
+                    }
+                    setPrefInput('');
+                    setShowPrefSuggestions(false);
+                  }}
+                >
+                  Add "{prefInput.trim()}" as custom
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <label className="block mb-2 font-semibold">Number of days</label>
         <input
           type="number"
-          className="input"
-          style={{ width: "5rem" }}
+          className="input days-input"
           value={days}
           onChange={(e) => setDays(Number(e.target.value))}
           min={1}
@@ -421,8 +517,7 @@ export default function GenerateItinerary({ onSave }) {
 
         <button
           onClick={handleGenerate}
-          className="adventure-btn btn-dark-strong"
-          style={{ marginTop: "1rem", width: "100%" }}
+          className="adventure-btn btn-dark-strong generate-btn-full"
           disabled={loading}
         >
           {loading ? "Generating..." : "Generate Itinerary"}
@@ -466,6 +561,7 @@ export default function GenerateItinerary({ onSave }) {
                   className="save-btn"
                   onClick={async () => {
                     try {
+                      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
                       const payload = {
                         title: `Trip to ${destinations.map(d => d.name).join(", ")}`,
                         destinations: destinations.map(d => d.name),
@@ -474,9 +570,9 @@ export default function GenerateItinerary({ onSave }) {
                         itinerary: dayBoxes
                       };
                       
-                      const res = await fetch("http://localhost:5001/api/itineraries", {
+                      const res = await fetch(`${API_URL}/api/itineraries`, {
                         method: "POST",
-                        headers: { "Content-Type": "application/json" },
+                        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
                         body: JSON.stringify(payload)
                       });
                       
@@ -617,7 +713,114 @@ export default function GenerateItinerary({ onSave }) {
           51%, 100% { opacity: 0; }
         }
         
-        /* TikTok section */
+        /* TikTok section - Compact with terracotta accent */
+        .tiktok-section-compact {
+          margin-bottom: 0.75rem;
+        }
+        .tiktok-input-row {
+          display: flex;
+          align-items: stretch;
+          gap: 0.5rem;
+        }
+        .tiktok-input-row .tiktok-input-compact {
+          flex: 1;
+          min-width: 0;
+          background: #fff !important;
+          border: 1px solid #d8cfc4 !important;
+          color: #3b2f2f;
+          font-size: 0.85rem;
+          padding: 0 0.75rem !important;
+          border-radius: 8px !important;
+          height: 38px !important;
+          box-sizing: border-box;
+          margin: 0 !important;
+          display: flex;
+          align-items: center;
+        }
+        .tiktok-input-row .tiktok-input-compact::placeholder {
+          color: #a89f95;
+        }
+        .tiktok-input-row .tiktok-input-compact:focus {
+          outline: none;
+          border-color: #e07a5f !important;
+        }
+        .tiktok-input-row .extract-btn-compact {
+          padding: 0 1rem;
+          background: linear-gradient(135deg, #c96a52 0%, #a85540 100%);
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-weight: 600;
+          font-size: 0.8rem;
+          cursor: pointer;
+          transition: background 0.2s, transform 0.1s;
+          white-space: nowrap;
+          height: 38px;
+          box-sizing: border-box;
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .extract-btn-compact:hover:not(:disabled) {
+          background: linear-gradient(135deg, #b85a45 0%, #8f4735 100%);
+        }
+        .extract-btn-compact:disabled {
+          opacity: 0.7;
+          cursor: not-allowed;
+        }
+        
+        /* Loading dots wave animation */
+        .loading-dots {
+          display: inline-flex;
+          align-items: center;
+          gap: 3px;
+        }
+        .loading-dots .dot {
+          width: 6px;
+          height: 6px;
+          background: white;
+          border-radius: 50%;
+          animation: wave 1.2s ease-in-out infinite;
+        }
+        .loading-dots .dot:nth-child(1) {
+          animation-delay: 0s;
+        }
+        .loading-dots .dot:nth-child(2) {
+          animation-delay: 0.2s;
+        }
+        .loading-dots .dot:nth-child(3) {
+          animation-delay: 0.4s;
+        }
+        @keyframes wave {
+          0%, 60%, 100% {
+            transform: translateY(0);
+          }
+          30% {
+            transform: translateY(-6px);
+          }
+        }
+        
+        .view-extracted-btn-compact {
+          margin-top: 0.5rem;
+          padding: 0.4rem 0.75rem;
+          background: #81b29a;
+          color: white;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 0.75rem;
+          transition: background 0.2s;
+        }
+        .view-extracted-btn-compact:hover {
+          background: #6a9c84;
+        }
+        }
+        .view-extracted-btn-compact:hover {
+          transform: translateY(-1px);
+        }
+        
+        /* Old TikTok section styles - keep for reference */
         .tiktok-section {
           background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
           border-radius: 14px;
@@ -752,21 +955,29 @@ export default function GenerateItinerary({ onSave }) {
         }
         .search-input-wrapper {
           position: relative;
-          display: flex;
-          align-items: center;
+        }
+        .search-input {
+          padding-left: 2.25rem !important;
+          margin-bottom: 0 !important;
         }
         .search-icon {
           position: absolute;
           left: 0.75rem;
+          top: 0;
+          bottom: 0;
+          display: flex;
+          align-items: center;
           font-size: 0.9rem;
           opacity: 0.6;
-        }
-        .search-input {
-          padding-left: 2.25rem !important;
+          pointer-events: none;
         }
         .search-spinner {
           position: absolute;
           right: 0.75rem;
+          top: 0;
+          bottom: 0;
+          display: flex;
+          align-items: center;
           font-size: 0.8rem;
           animation: spin 1s linear infinite;
         }
@@ -842,6 +1053,104 @@ export default function GenerateItinerary({ onSave }) {
         }
         .destination-tag button:hover {
           color: #fff;
+        }
+        
+        /* Preferences Input Container */
+        .preferences-input-container {
+          margin-bottom: 0.5rem;
+          position: relative;
+        }
+        .preferences-tags-input {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 0.4rem;
+          padding: 0.5rem 0.75rem;
+          border: 2px solid #d4c4b5;
+          border-radius: 12px;
+          background: #faf6f1;
+          min-height: 44px;
+          cursor: text;
+        }
+        .preferences-tags-input:focus-within {
+          border-color: #8b5c3e;
+          box-shadow: 0 0 0 3px rgba(139, 92, 62, 0.1);
+        }
+        .preference-tag {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.3rem;
+          padding: 0.25rem 0.5rem;
+          background: linear-gradient(135deg, #8b5c3e, #a67c52);
+          color: white;
+          border-radius: 16px;
+          font-size: 0.75rem;
+          font-weight: 500;
+        }
+        .preference-tag button {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(255, 255, 255, 0.2);
+          border: none;
+          color: white;
+          font-size: 0.85rem;
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          cursor: pointer;
+          line-height: 1;
+          padding: 0;
+          transition: background 0.2s;
+        }
+        .preference-tag button:hover {
+          background: rgba(255, 255, 255, 0.4);
+        }
+        .preferences-text-input {
+          flex: 1;
+          min-width: 120px;
+          border: none;
+          background: transparent;
+          outline: none;
+          font-size: 0.85rem;
+          color: #5a4a42;
+        }
+        .preferences-text-input::placeholder {
+          color: #a89888;
+        }
+        
+        /* Preferences Suggestions Dropdown */
+        .pref-suggestions-dropdown {
+          position: absolute;
+          top: 100%;
+          left: 0;
+          right: 0;
+          background: white;
+          border: 2px solid #d4c4b5;
+          border-top: none;
+          border-radius: 0 0 12px 12px;
+          max-height: 180px;
+          overflow-y: auto;
+          z-index: 100;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .pref-suggestion-item {
+          padding: 0.6rem 0.75rem;
+          cursor: pointer;
+          font-size: 0.85rem;
+          color: #5a4a42;
+          transition: background 0.15s;
+        }
+        .pref-suggestion-item:hover {
+          background: #f6f1ea;
+        }
+        .pref-suggestion-item:last-child {
+          border-radius: 0 0 10px 10px;
+        }
+        .pref-suggestion-item.pref-custom {
+          color: #8b5c3e;
+          font-style: italic;
+          border-top: 1px solid #ebe4db;
         }
         
         /* Preferences Grid */
@@ -1044,6 +1353,161 @@ export default function GenerateItinerary({ onSave }) {
           color: white;
         }
         
+        /* View Extracted Button */
+        .view-extracted-btn {
+          margin-top: 0.5rem;
+          padding: 0.5rem 1rem;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 0.875rem;
+          transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .view-extracted-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        /* Extracted Info Modal */
+        .extracted-modal-backdrop {
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 100;
+          backdrop-filter: blur(4px);
+        }
+        .extracted-modal {
+          background: white;
+          border-radius: 16px;
+          max-width: 600px;
+          width: 90%;
+          max-height: 80vh;
+          overflow: hidden;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        .extracted-modal-header {
+          padding: 1.25rem 1.5rem;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .extracted-modal-header h2 {
+          margin: 0;
+          font-size: 1.25rem;
+          color: white;
+        }
+        .extracted-modal-close {
+          background: rgba(255, 255, 255, 0.2);
+          border: none;
+          color: white;
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          cursor: pointer;
+          font-size: 1.25rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: background 0.2s;
+        }
+        .extracted-modal-close:hover {
+          background: rgba(255, 255, 255, 0.3);
+        }
+        .extracted-modal-body {
+          padding: 1.5rem;
+          overflow-y: auto;
+          max-height: calc(80vh - 140px);
+        }
+        .extracted-modal-item {
+          background: #f8f9fa;
+          border-radius: 12px;
+          padding: 1rem;
+          margin-bottom: 1rem;
+          position: relative;
+        }
+        .extracted-modal-item:last-child {
+          margin-bottom: 0;
+        }
+        .extracted-modal-destination {
+          font-weight: 600;
+          font-size: 1.1rem;
+          color: #333;
+          margin-bottom: 0.5rem;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+        .extracted-modal-tips {
+          color: #666;
+          font-size: 0.9rem;
+          line-height: 1.5;
+          background: white;
+          padding: 0.75rem;
+          border-radius: 8px;
+          border-left: 3px solid #667eea;
+        }
+        .extracted-modal-remove {
+          position: absolute;
+          top: 0.5rem;
+          right: 0.5rem;
+          background: #ff4757;
+          color: white;
+          border: none;
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          cursor: pointer;
+          font-size: 0.875rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .extracted-modal-remove:hover {
+          background: #ff3344;
+        }
+        .extracted-modal-empty {
+          text-align: center;
+          color: #999;
+          padding: 2rem;
+        }
+        .extracted-modal-footer {
+          padding: 1rem 1.5rem;
+          border-top: 1px solid #eee;
+          display: flex;
+          justify-content: flex-end;
+          gap: 0.5rem;
+        }
+        .extracted-modal-btn {
+          padding: 0.5rem 1rem;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 0.875rem;
+          transition: all 0.2s;
+        }
+        .extracted-modal-btn.secondary {
+          background: #f1f1f1;
+          border: none;
+          color: #666;
+        }
+        .extracted-modal-btn.secondary:hover {
+          background: #e5e5e5;
+        }
+        .extracted-modal-btn.danger {
+          background: #ff4757;
+          border: none;
+          color: white;
+        }
+        .extracted-modal-btn.danger:hover {
+          background: #ff3344;
+        }
+        
         /* Responsive - stack on smaller screens */
         @media (max-width: 900px) {
           .generate-layout-split {
@@ -1063,6 +1527,63 @@ export default function GenerateItinerary({ onSave }) {
           }
         }
       `}</style>
+      
+      {/* Extracted Info Modal */}
+      {showExtractedModal && (
+        <div className="extracted-modal-backdrop" onClick={() => setShowExtractedModal(false)}>
+          <div className="extracted-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="extracted-modal-header">
+              <h2>🎵 Extracted Travel Info</h2>
+              <button className="extracted-modal-close" onClick={() => setShowExtractedModal(false)}>×</button>
+            </div>
+            <div className="extracted-modal-body">
+              {extractedInfo.length === 0 ? (
+                <div className="extracted-modal-empty">
+                  <p>No extracted info yet.</p>
+                  <p>Paste TikTok URLs and click "Extract Travel Info" to get started!</p>
+                </div>
+              ) : (
+                extractedInfo.map((info, idx) => (
+                  <div key={idx} className="extracted-modal-item">
+                    <button 
+                      className="extracted-modal-remove"
+                      onClick={() => removeExtractedItem(idx)}
+                      title="Remove"
+                    >×</button>
+                    <div className="extracted-modal-destination">
+                      📍 {info.destination || "Unknown location"}
+                    </div>
+                    {info.tips && info.tips !== 'Could not extract' && (
+                      <div className="extracted-modal-tips">
+                        💡 {info.tips}
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="extracted-modal-footer">
+              {extractedInfo.length > 0 && (
+                <button 
+                  className="extracted-modal-btn danger"
+                  onClick={() => {
+                    setExtractedInfo([]);
+                    setShowExtractedModal(false);
+                  }}
+                >
+                  Clear All
+                </button>
+              )}
+              <button 
+                className="extracted-modal-btn secondary"
+                onClick={() => setShowExtractedModal(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

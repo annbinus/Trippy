@@ -1,5 +1,6 @@
 import express from "express";
 import pool from "../db.js";
+import jwt from "jsonwebtoken";
 
 // Import activity parsing functions
 function parseActivitiesFromDayContent(content) {
@@ -139,23 +140,18 @@ async function geocodeDestination(destinationName) {
     const mapboxToken = "pk.eyJ1IjoiYW5uYmludXMiLCJhIjoiY21rNHB3c2wxMDIxYjNlb3BzZnAyeHdqdiJ9.JBPzH4oT7DjWIMJaCjCuBw";
     const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(destinationName)}.json?access_token=${mapboxToken}&limit=1`;
     
-    console.log(`Geocoding destination: "${destinationName}"`);
     const geocodeRes = await fetch(url);
     
     if (!geocodeRes.ok) {
-      console.warn(`Geocoding failed with status ${geocodeRes.status} for "${destinationName}"`);
       return { latitude: 40.7128, longitude: -74.0060 };
     }
     
     const geocodeData = await geocodeRes.json();
-    console.log(`Geocoding response for "${destinationName}":`, JSON.stringify(geocodeData, null, 2));
     
     if (geocodeData.features && geocodeData.features.length > 0) {
       const [lng, lat] = geocodeData.features[0].center;
-      console.log(`✓ Successfully geocoded "${destinationName}" to (${lat}, ${lng})`);
       return { latitude: lat, longitude: lng };
     } else {
-      console.warn(`No features found for "${destinationName}"`);
       return { latitude: 40.7128, longitude: -74.0060 };
     }
   } catch (err) {
@@ -169,12 +165,23 @@ router.post("/", async (req, res) => {
   const client = await pool.connect();
   
   try {
-    const { title, destinations, preferences, days, itinerary } = req.body;
+    // Get user from token (prefer Authorization header, fallback to cookie)
+    const token = req.headers.authorization?.replace(/^Bearer\s+/, "") || req.cookies?.token;
     
-    console.log("POST /api/itineraries received payload:");
-    console.log("Title:", title);
-    console.log("Destinations:", destinations);
-    console.log("Itinerary array:", JSON.stringify(itinerary, null, 2));
+    let userId = null;
+    
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || "dev-secret");
+        userId = decoded.id;
+      } catch (e) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+    } else {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    
+    const { title, destinations, preferences, days, itinerary } = req.body;
 
     if (!itinerary || !Array.isArray(itinerary) || itinerary.length === 0) {
       return res.status(400).json({ error: "Itinerary items are required" });
@@ -197,10 +204,10 @@ router.post("/", async (req, res) => {
     // For now, we'll store them and pass them back in the response
     const itineraryTitle = title || `Trip to ${destinations?.join(", ") || "Unknown"}`;
     const { rows: [newItinerary] } = await client.query(
-      `INSERT INTO itineraries (title)
-       VALUES ($1)
+      `INSERT INTO itineraries (title, user_id)
+       VALUES ($1, $2)
        RETURNING *`,
-      [itineraryTitle]
+      [itineraryTitle, userId]
     );
 
     // Create itinerary items (one per day) using existing schema
@@ -234,13 +241,10 @@ router.post("/", async (req, res) => {
       if (item.notes) {
         try {
           const dayData = JSON.parse(item.notes);
-          console.log("Processing day data:", JSON.stringify(dayData, null, 2));
           
           if (dayData.content) {
-            console.log("Day content to parse:", dayData.content);
             // Parse activities from content
             const activities = parseActivitiesFromDayContent(dayData.content);
-            console.log("Extracted activities:", JSON.stringify(activities, null, 2));
             
             if (activities.length > 0) {
               // Create activities array with proper structure
@@ -297,8 +301,30 @@ router.post("/", async (req, res) => {
 // GET all itineraries (for listing)
 router.get("/", async (req, res) => {
   try {
+    // Get user from token (if authenticated)
+    const token = req.cookies?.token || req.headers.authorization?.replace(/^Bearer\s+/, "");
+    let userId = null;
+    
+    if (token) {
+      try {
+        // Verify token to get user_id
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || "dev-secret");
+        userId = decoded.id;
+      } catch (e) {
+        // Token invalid, return empty array
+        return res.json([]);
+      }
+    }
+    
+    // If no valid token, return empty array (user not logged in)
+    if (!userId) {
+      return res.json([]);
+    }
+    
+    // Fetch only this user's itineraries
     const { rows } = await pool.query(
-      `SELECT * FROM itineraries ORDER BY created_at DESC LIMIT 50`
+      `SELECT * FROM itineraries WHERE user_id = $1 ORDER BY created_at DESC LIMIT 50`,
+      [userId]
     );
     res.json(rows);
   } catch (err) {

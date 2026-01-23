@@ -6,17 +6,24 @@ const router = express.Router();
 // Streaming endpoint
 router.post('/', async (req, res) => {
   try {
-    const { destinations = [], preferences = '', days = 3 } = req.body || {};
+    const { destinations = [], preferences = '', days = 3, tiktokTips = '' } = req.body || {};
     const HUGGINGFACE_API_KEY = process.env.HUGGINGFACE_API_KEY;
     if (!HUGGINGFACE_API_KEY) {
       return res.status(400).json({ error: 'Set HUGGINGFACE_API_KEY in server env' });
     }
 
     const destList = destinations.map((d, i) => `${i + 1}. ${d.name}${d.description ? ` - ${d.description}` : ''}`).join('\n');
+    
+    // Build the prompt with TikTok tips if available
+    let tiktokSection = '';
+    if (tiktokTips) {
+      tiktokSection = `\n\nIMPORTANT - Include these specific recommendations from travel videos:\n${tiktokTips}\n`;
+    }
+    
     const prompt = `You are a travel planner. Create a ${days}-day travel itinerary.
 
 Destinations: ${destList}
-Preferences: ${preferences || 'general sightseeing'}
+Preferences: ${preferences || 'general sightseeing'}${tiktokSection}
 
 Write ONLY the itinerary in this exact plain text format (no JSON, no code, no thinking, no explanations):
 

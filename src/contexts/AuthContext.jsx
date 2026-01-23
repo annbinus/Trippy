@@ -4,13 +4,27 @@ const AuthContext = createContext(null);
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
+// Helper to get auth headers
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token');
+  return token ? { 'Authorization': `Bearer ${token}` } : {};
+};
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // fetch /api/auth/me to see if logged in
-    fetch(`${API_URL}/api/auth/me`, { credentials: 'include' })
+    // Check if we have a token and validate it
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+    
+    fetch(`${API_URL}/api/auth/me`, {
+      headers: getAuthHeaders()
+    })
       .then((res) => {
         if (!res.ok) throw new Error('Not authenticated');
         return res.json();
@@ -18,7 +32,10 @@ export function AuthProvider({ children }) {
       .then((body) => {
         setUser(body.user);
       })
-      .catch(() => setUser(null))
+      .catch(() => {
+        localStorage.removeItem('token');
+        setUser(null);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -27,10 +44,11 @@ export function AuthProvider({ children }) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
-      credentials: 'include',
     });
-    if (!res.ok) throw await res.json();
     const body = await res.json();
+    if (!res.ok) throw body;
+    // Store token in localStorage
+    localStorage.setItem('token', body.token);
     setUser(body.user);
     return body.user;
   };
@@ -40,20 +58,22 @@ export function AuthProvider({ children }) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, password }),
-      credentials: 'include',
     });
-    if (!res.ok) throw await res.json();
     const body = await res.json();
+    if (!res.ok) throw body;
+    // Store token in localStorage
+    localStorage.setItem('token', body.token);
+    setUser(body.user);
     return body.user;
   };
 
   const logout = async () => {
-    await fetch(`${API_URL}/api/auth/logout`, { method: 'POST', credentials: 'include' });
+    localStorage.removeItem('token');
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, getAuthHeaders }}>
       {children}
     </AuthContext.Provider>
   );
@@ -62,3 +82,6 @@ export function AuthProvider({ children }) {
 export function useAuth() {
   return useContext(AuthContext);
 }
+
+// Export the helper for use in components that don't use the hook
+export { getAuthHeaders };

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getAuthHeaders } from "../../contexts/AuthContext";
 
 export default function AddItineraryItemModal({ 
   onClose, 
@@ -38,9 +39,10 @@ export default function AddItineraryItemModal({
     };
 
     try {
-      const res = await fetch("http://localhost:5001/api/itinerary-items", {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+      const res = await fetch(`${API_URL}/api/itinerary-items`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify(itemData),
       });
 
@@ -63,81 +65,40 @@ export default function AddItineraryItemModal({
     <div 
       className="modal-backdrop"
       onClick={onClose}
-      style={{
-        position: "fixed",
-        inset: 0,
-        backgroundColor: "rgba(0,0,0,0.4)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 50,
-      }}
     >
       <div 
         className="modal"
         onClick={(e) => e.stopPropagation()}
-        style={{
-          backgroundColor: "white",
-          borderRadius: "0.5rem",
-          padding: "2rem",
-          maxWidth: "500px",
-          width: "90%",
-          boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
-        }}
       >
-        <h2 style={{ marginBottom: "1.5rem", fontSize: "1.5rem", fontWeight: 600 }}>
+        <h2 className="modal-form-title">
           Add to Itinerary
         </h2>
 
         <form onSubmit={handleSubmit}>
           {/* Type Selection */}
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>
+          <div className="form-group">
+            <label className="form-label">
               Type:
             </label>
-            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+            <div className="type-buttons">
               <button
                 type="button"
                 onClick={() => setForm({ ...form, type: "restaurant" })}
-                style={{
-                  padding: "0.75rem 1rem",
-                  borderRadius: "0.5rem",
-                  border: form.type === "restaurant" ? "2px solid #fb923c" : "1px solid #ddd",
-                  backgroundColor: form.type === "restaurant" ? "#fff7ed" : "white",
-                  cursor: "pointer",
-                  fontSize: "0.875rem",
-                  fontWeight: form.type === "restaurant" ? 600 : 400,
-                }}
+                className={`type-btn ${form.type === "restaurant" ? "type-btn-active" : ""}`}
               >
                 🍽️ Restaurant
               </button>
               <button
                 type="button"
                 onClick={() => setForm({ ...form, type: "museum" })}
-                style={{
-                  padding: "0.75rem 1rem",
-                  borderRadius: "0.5rem",
-                  border: form.type === "museum" ? "2px solid #fb923c" : "1px solid #ddd",
-                  backgroundColor: form.type === "museum" ? "#fff7ed" : "white",
-                  cursor: "pointer",
-                  fontSize: "0.875rem",
-                  fontWeight: form.type === "museum" ? 600 : 400,
-                }}
+                className={`type-btn ${form.type === "museum" ? "type-btn-active" : ""}`}
               >
                 🏛️ Museum
               </button>
               <button
                 type="button"
                 onClick={() => setForm({ ...form, type: "activity" })}
-                style={{
-                  padding: "0.75rem 1rem",
-                  borderRadius: "0.5rem",
-                  border: form.type === "activity" ? "2px solid #fb923c" : "1px solid #ddd",
-                  backgroundColor: form.type === "activity" ? "#fff7ed" : "white",
-                  cursor: "pointer",
-                  fontSize: "0.875rem",
-                  fontWeight: form.type === "activity" ? 600 : 400,
-                }}
+                className={`type-btn ${form.type === "activity" ? "type-btn-active" : ""}`}
               >
                 🎯 Activity
               </button>
@@ -145,9 +106,9 @@ export default function AddItineraryItemModal({
           </div>
 
           {/* Name */}
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>
-              Name <span style={{ color: "#ef4444" }}>*</span>
+          <div className="form-group">
+            <label className="form-label">
+              Name <span className="required">*</span>
             </label>
             <input
               type="text"
@@ -155,19 +116,13 @@ export default function AddItineraryItemModal({
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               placeholder={form.type === "restaurant" ? "Restaurant name" : form.type === "museum" ? "Museum name" : "Activity name"}
               required
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                borderRadius: "0.5rem",
-                border: "1px solid #ddd",
-                fontSize: "1rem",
-              }}
+              className="form-input"
             />
           </div>
 
           {/* Day */}
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>
+          <div className="form-group">
+            <label className="form-label">
               Day:
             </label>
             <input
@@ -175,19 +130,13 @@ export default function AddItineraryItemModal({
               min="1"
               value={form.day}
               onChange={(e) => setForm({ ...form, day: parseInt(e.target.value) || 1 })}
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                borderRadius: "0.5rem",
-                border: "1px solid #ddd",
-                fontSize: "1rem",
-              }}
+              className="form-input"
             />
           </div>
 
           {/* Notes (Optional) */}
-          <div style={{ marginBottom: "1.5rem" }}>
-            <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>
+          <div className="form-group-lg">
+            <label className="form-label">
               Notes (Optional):
             </label>
             <textarea
@@ -195,47 +144,23 @@ export default function AddItineraryItemModal({
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
               placeholder="Additional details..."
               rows="3"
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                borderRadius: "0.5rem",
-                border: "1px solid #ddd",
-                fontSize: "1rem",
-                resize: "vertical",
-              }}
+              className="form-textarea"
             />
           </div>
 
           {/* Actions */}
-          <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
+          <div className="form-actions">
             <button
               type="button"
               onClick={onClose}
-              style={{
-                padding: "0.75rem 1.5rem",
-                borderRadius: "0.5rem",
-                border: "1px solid #ddd",
-                backgroundColor: "white",
-                cursor: "pointer",
-                fontSize: "0.875rem",
-              }}
+              className="btn-cancel"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              style={{
-                padding: "0.75rem 1.5rem",
-                borderRadius: "0.5rem",
-                border: "none",
-                backgroundColor: "#fb923c",
-                color: "white",
-                cursor: loading ? "not-allowed" : "pointer",
-                fontSize: "0.875rem",
-                fontWeight: 600,
-                opacity: loading ? 0.6 : 1,
-              }}
+              className="btn-submit"
             >
               {loading ? "Adding..." : "Add Item"}
             </button>

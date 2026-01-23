@@ -4,6 +4,9 @@ import Navbar from "./Navbar";
 import MapSection from "./MapSection";
 import DestinationsPanel from "./DestinationPanel";
 import AdventureBar from "./AdventureBar";
+import { getAuthHeaders } from "../../contexts/AuthContext";
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -25,8 +28,9 @@ export default function Home() {
   const handleDestinationDelete = async (destination) => {
     try {
       // Delete saved itinerary
-      const res = await fetch(`http://localhost:5001/api/itineraries/${destination.itineraryId}`, {
-        method: "DELETE"
+      const res = await fetch(`${API_URL}/api/itineraries/${destination.itineraryId}`, {
+        method: "DELETE",
+        headers: getAuthHeaders()
       });
       
       if (!res.ok) {
@@ -45,7 +49,9 @@ export default function Home() {
   const fetchAllData = async () => {
     try {
       // Fetch saved itineraries and convert them to destination-like objects
-      const itinRes = await fetch("http://localhost:5001/api/itineraries");
+      const itinRes = await fetch(`${API_URL}/api/itineraries`, {
+        headers: getAuthHeaders()
+      });
       if (itinRes.ok) {
         const itineraries = await itinRes.json();
         
@@ -54,7 +60,9 @@ export default function Home() {
           itineraries.map(async (itinerary) => {
             // Get the first destination from the itinerary items to use coordinates
             try {
-              const itemsRes = await fetch(`http://localhost:5001/api/itinerary-items?itinerary_id=${itinerary.id}`);
+              const itemsRes = await fetch(`${API_URL}/api/itinerary-items?itinerary_id=${itinerary.id}`, {
+                headers: getAuthHeaders()
+              });
               if (itemsRes.ok) {
                 const items = await itemsRes.json();
                 let destinationNames = [];
@@ -72,7 +80,6 @@ export default function Home() {
                     if (data.coordinates) {
                       latitude = data.coordinates.latitude;
                       longitude = data.coordinates.longitude;
-                      console.log(`Using stored coordinates for ${itinerary.title}: (${latitude}, ${longitude})`);
                     }
                     
                   } catch (jsonError) {
@@ -140,7 +147,7 @@ export default function Home() {
         </div>
 
         {/* Right: Panels */}
-        <div className="fill-scroll" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', paddingRight: '1rem', overflow: 'hidden' }}>
+        <div className="fill-scroll fill-scroll-column">
           <DestinationsPanel
             destinations={destinations}
             onSelect={handleDestinationSelect}

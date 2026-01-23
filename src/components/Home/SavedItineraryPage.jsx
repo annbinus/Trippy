@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { getAuthHeaders } from "../../contexts/AuthContext";
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
 // Helper function to get activity icons
 const getActivityIcon = (type) => {
@@ -50,7 +53,9 @@ export default function SavedItineraryPage() {
     if (!itineraryId) return;
 
     // Fetch itinerary details
-    fetch(`http://localhost:5001/api/itineraries/${itineraryId}`)
+    fetch(`${API_URL}/api/itineraries/${itineraryId}`, {
+      headers: getAuthHeaders()
+    })
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch itinerary");
         return res.json();
@@ -59,7 +64,9 @@ export default function SavedItineraryPage() {
         setItinerary(data);
         
         // Fetch itinerary items
-        return fetch(`http://localhost:5001/api/itinerary-items?itinerary_id=${itineraryId}`);
+        return fetch(`${API_URL}/api/itinerary-items?itinerary_id=${itineraryId}`, {
+          headers: getAuthHeaders()
+        });
       })
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch itinerary items");
@@ -110,19 +117,16 @@ export default function SavedItineraryPage() {
   };
 
   const handleDragStart = (e, dayIndex, activityIndex) => {
-    console.log("🎯 DRAG START:", { dayIndex, activityIndex });
     setDraggedItem({ dayIndex, activityIndex });
     e.dataTransfer.effectAllowed = "move";
   };
 
   const handleDragOver = (e) => {
-    console.log("🔄 DRAG OVER");
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
   };
 
   const handleDragEnter = (e, dayIndex, activityIndex, position) => {
-    console.log("➡️ DRAG ENTER:", { dayIndex, activityIndex, position });
     setDropIndicator({ dayIndex, activityIndex, position });
   };
 
@@ -133,12 +137,10 @@ export default function SavedItineraryPage() {
   };
 
   const handleDrop = (e, targetDayIndex, targetActivityIndex, position) => {
-    console.log("💧 DROP:", { targetDayIndex, targetActivityIndex, position, draggedItem });
     e.preventDefault();
     e.stopPropagation();
     
     if (!draggedItem) {
-      console.log("⚠️ No draggedItem, returning");
       setDropIndicator(null);
       return;
     }
@@ -210,9 +212,9 @@ export default function SavedItineraryPage() {
           content: day.content
         });
 
-        return fetch(`http://localhost:5001/api/itinerary-items/${itemId}`, {
+        return fetch(`${API_URL}/api/itinerary-items/${itemId}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...getAuthHeaders() },
           body: JSON.stringify({ notes: updatedNotes })
         });
       });
@@ -227,7 +229,7 @@ export default function SavedItineraryPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: "2rem", textAlign: "center" }}>
+      <div className="p-2 text-center">
         <p>Loading itinerary...</p>
       </div>
     );
@@ -235,9 +237,9 @@ export default function SavedItineraryPage() {
 
   if (!itinerary) {
     return (
-      <div style={{ padding: "2rem", textAlign: "center" }}>
+      <div className="p-2 text-center">
         <p>Itinerary not found</p>
-        <button onClick={() => navigate("/")} style={{ marginTop: "1rem" }}>
+        <button onClick={() => navigate("/")} className="mt-1">
           Go Home
         </button>
       </div>
@@ -245,61 +247,36 @@ export default function SavedItineraryPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#f9fafb", padding: "2rem" }}>
+    <div className="itinerary-page">
       {/* Header */}
-      <div style={{ marginBottom: "2rem" }}>
-        <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem", alignItems: "center" }}>
+      <div className="itinerary-header">
+        <div className="header-row">
           <button
             onClick={() => navigate("/home")}
-            style={{
-              padding: "0.5rem 1rem",
-              backgroundColor: "transparent",
-              border: "1px solid #ddd",
-              borderRadius: "0.5rem",
-              cursor: "pointer",
-              fontSize: "0.875rem",
-            }}
+            className="back-btn"
           >
             ← Back to Destinations
           </button>
         </div>
         
-        <h1 className="h2-md" style={{ marginBottom: "0.5rem" }}>
+        <h1 className="h2-md mb-05">
           {itinerary?.title || "Saved Itinerary"}
         </h1>
       </div>
 
       {/* Itinerary Content */}
-      <div className="panel" style={{ backgroundColor: "#ffffff", padding: "2rem", borderRadius: "0.75rem", border: "1px solid #e5e7eb" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-          <h2 className="h2-md" style={{ margin: 0 }}>
+      <div className="panel content-panel">
+        <div className="details-header">
+          <h2 className="h2-md m-0">
             Itinerary Details
           </h2>
-          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-            <span style={{
-              background: "linear-gradient(135deg, #fb923c, #f97316)",
-              color: "white",
-              padding: "0.4rem 1rem",
-              borderRadius: "20px",
-              fontSize: "0.85rem",
-              fontWeight: 600
-            }}>
+          <div className="flex-row flex-center gap-1">
+            <span className="days-badge">
               {dayBoxes.length} Days
             </span>
             <button
               onClick={saveChanges}
-              style={{
-                background: "#fb923c",
-                color: "white",
-                border: "none",
-                padding: "0.5rem 1rem",
-                borderRadius: "0.5rem",
-                fontWeight: 600,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem"
-              }}
+              className="save-btn"
             >
               💾 Save Changes
             </button>
@@ -307,49 +284,26 @@ export default function SavedItineraryPage() {
         </div>
 
         {loading ? (
-          <p style={{ color: "#666", fontStyle: "italic" }}>Loading itinerary...</p>
+          <p className="loading-text">Loading itinerary...</p>
         ) : dayBoxes.length === 0 ? (
-          <div style={{ padding: "2rem", textAlign: "center" }}>
-            <p style={{ color: "#666", fontStyle: "italic" }}>No itinerary content found</p>
+          <div className="empty-state-container">
+            <p className="loading-text">No itinerary content found</p>
           </div>
         ) : (
-          <div style={{ maxHeight: "600px", overflowY: "auto" }}>
+          <div className="scroll-container">
             {dayBoxes.map((day, index) => (
-              <div key={index} style={{ marginBottom: "2rem" }}>
-                <h3
-                  style={{
-                    fontSize: "1.125rem",
-                    fontWeight: 600,
-                    marginBottom: "1rem",
-                    color: "#fb923c",
-                    borderBottom: "2px solid #fb923c",
-                    paddingBottom: "0.5rem",
-                  }}
-                >
+              <div key={index} className="day-section">
+                <h3 className="day-title">
                   <input
                     value={day.title}
                     onChange={(e) => updateDayTitle(index, e.target.value)}
-                    style={{
-                      background: "transparent",
-                      border: "none",
-                      fontSize: "1.125rem",
-                      fontWeight: 600,
-                      color: "#fb923c",
-                      outline: "none",
-                      width: "100%"
-                    }}
+                    className="day-title-input"
                     placeholder={`Day ${index + 1}`}
                   />
                 </h3>
-                <div style={{
-                  padding: "1rem",
-                  backgroundColor: "#ffffff",
-                  border: "1px solid #e5e7eb",
-                  borderLeft: "4px solid #fb923c",
-                  borderRadius: "0.5rem",
-                }}>
+                <div className="day-content-box">
                   {day.activities && day.activities.length > 0 ? (
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                    <div className="flex-col gap-05">
                       {day.activities.map((activity, actIndex) => (
                         <div key={actIndex}>
                           <div
@@ -357,21 +311,13 @@ export default function SavedItineraryPage() {
                             onDragEnter={(e) => handleDragEnter(e, index, actIndex, 'before')}
                             onDragLeave={handleDragLeave}
                             onDrop={(e) => handleDrop(e, index, actIndex, 'before')}
-                            style={{
-                              height: dropIndicator?.dayIndex === index && dropIndicator?.activityIndex === actIndex && dropIndicator?.position === 'before' ? "4px" : "0px",
-                              backgroundColor: dropIndicator?.dayIndex === index && dropIndicator?.activityIndex === actIndex && dropIndicator?.position === 'before' ? "#fb923c" : "transparent",
-                              transition: "all 0.2s ease",
-                              marginBottom: dropIndicator?.dayIndex === index && dropIndicator?.activityIndex === actIndex && dropIndicator?.position === 'before' ? "0.75rem" : "0px",
-                              borderRadius: "2px",
-                              boxShadow: dropIndicator?.dayIndex === index && dropIndicator?.activityIndex === actIndex && dropIndicator?.position === 'before' ? "0 0 0 2px #fb923c40" : "none"
-                            }}
+                            className={`drop-indicator ${dropIndicator?.dayIndex === index && dropIndicator?.activityIndex === actIndex && dropIndicator?.position === 'before' ? 'drop-indicator-active' : ''}`}
                           />
                           
                           <div 
                             key={`activity-${actIndex}`}
                             draggable="true"
                             onDragStart={(e) => {
-                              console.log("🎯 DRAG START on activity card", index, actIndex);
                               e.dataTransfer.effectAllowed = "move";
                               handleDragStart(e, index, actIndex);
                             }}
@@ -380,12 +326,10 @@ export default function SavedItineraryPage() {
                               e.dataTransfer.dropEffect = "move";
                             }}
                             onDragEnter={(e) => {
-                              console.log("➡️ DRAG ENTER on activity card");
                               handleDragEnter(e, index, actIndex, 'center');
                             }}
                             onDragLeave={handleDragLeave}
                             onDrop={(e) => {
-                              console.log("💧 DROP on activity card");
                               handleDrop(e, index, actIndex, 'after');
                             }}
                             style={{
@@ -415,26 +359,17 @@ export default function SavedItineraryPage() {
                               marginBottom: dropIndicator?.dayIndex === index && dropIndicator?.activityIndex === actIndex && dropIndicator?.position === 'after' ? "1rem" : "0"
                             }}
                           >
-                            <div style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "0.5rem",
-                              marginBottom: "0.5rem"
-                            }}>
-                              <span draggable="false" style={{ fontSize: "1.2rem", cursor: "grab", userSelect: "none" }}>⋮⋮</span>
-                              <span draggable="false" style={{ userSelect: "none" }}>{getActivityIcon(activity.type)}</span>
-                              <h4 style={{
-                                fontSize: "1rem",
-                                fontWeight: "600",
-                                color: "#1f2937",
-                                margin: "0"
-                              }}>
+                            <div className="activity-header">
+                              <span draggable="false" className="drag-handle">⋮⋮</span>
+                              <span draggable="false" className="activity-icon">{getActivityIcon(activity.type)}</span>
+                              <h4 className="activity-title">
                                 {activity.title}
                               </h4>
                               {activity.time && (
                                 <input
                                   type="time"
                                   draggable="false"
+                                  className="time-input"
                                   value={activity.time.replace(/\s*(AM|PM)/i, "") === "9:00" ? "09:00" : 
                                          activity.time.includes("PM") && !activity.time.includes("12") ? 
                                          String(parseInt(activity.time.split(":")[0]) + 12).padStart(2, "0") + ":" + activity.time.split(":")[1].slice(0, 2) :
@@ -451,25 +386,10 @@ export default function SavedItineraryPage() {
                                   }}
                                   onDragStart={(e) => e.stopPropagation()}
                                   onMouseDown={(e) => e.stopPropagation()}
-                                  style={{
-                                    fontSize: "0.875rem",
-                                    color: "#6b7280",
-                                    marginLeft: "auto",
-                                    padding: "0.25rem 0.5rem",
-                                    border: "1px solid #d1d5db",
-                                    borderRadius: "0.25rem",
-                                    cursor: "pointer",
-                                    userSelect: "none"
-                                  }}
                                 />
                               )}
                             </div>
-                            <p draggable="false" style={{
-                              fontSize: "0.875rem",
-                              color: "#4b5563",
-                              margin: "0",
-                              lineHeight: "1.4"
-                            }}>
+                            <p draggable="false" className="activity-content">
                               {activity.content}
                             </p>
                           </div>
@@ -479,14 +399,7 @@ export default function SavedItineraryPage() {
                             onDragEnter={(e) => handleDragEnter(e, index, actIndex, 'after')}
                             onDragLeave={handleDragLeave}
                             onDrop={(e) => handleDrop(e, index, actIndex, 'after')}
-                            style={{
-                              height: dropIndicator?.dayIndex === index && dropIndicator?.activityIndex === actIndex && dropIndicator?.position === 'after' ? "4px" : "0px",
-                              backgroundColor: dropIndicator?.dayIndex === index && dropIndicator?.activityIndex === actIndex && dropIndicator?.position === 'after' ? "#fb923c" : "transparent",
-                              transition: "all 0.2s ease",
-                              marginTop: dropIndicator?.dayIndex === index && dropIndicator?.activityIndex === actIndex && dropIndicator?.position === 'after' ? "0.75rem" : "0px",
-                              borderRadius: "2px",
-                              boxShadow: dropIndicator?.dayIndex === index && dropIndicator?.activityIndex === actIndex && dropIndicator?.position === 'after' ? "0 0 0 2px #fb923c40" : "none"
-                            }}
+                            className={`drop-indicator ${dropIndicator?.dayIndex === index && dropIndicator?.activityIndex === actIndex && dropIndicator?.position === 'after' ? 'drop-indicator-active' : ''}`}
                           />
                         </div>
                       ))}
@@ -495,17 +408,7 @@ export default function SavedItineraryPage() {
                     <textarea
                       value={day.content}
                       onChange={(e) => updateDayContent(index, e.target.value)}
-                      style={{
-                        width: "100%",
-                        minHeight: "150px",
-                        background: "transparent",
-                        border: "none",
-                        fontSize: "1rem",
-                        lineHeight: "1.5",
-                        outline: "none",
-                        resize: "vertical",
-                        fontFamily: "inherit"
-                      }}
+                      className="day-textarea"
                       placeholder="Add your itinerary details here..."
                     />
                   )}

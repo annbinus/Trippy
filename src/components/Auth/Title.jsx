@@ -4,11 +4,11 @@ export default function Title({ view }) {
   const isAuthView = view !== "landing";
 
   return (
-    <div className="auth-title" style={{ top: isAuthView ? '4rem' : '7rem' }}>
+    <div className={`auth-title ${isAuthView ? 'auth-title-top-auth' : 'auth-title-top-landing'}`}>
       <img src={palmIcon} alt="Palm" className="auth-image" />
 
-      <h1 className="auth-title-large" style={{ fontWeight: 300 }}>Plan. Explore.</h1>
-      <h1 className="auth-title-large" style={{ fontWeight: 700 }}>Enjoy.</h1>
+      <h1 className="auth-title-large fw-light">Plan. Explore.</h1>
+      <h1 className="auth-title-large fw-bold">Enjoy.</h1>
     </div>
   );
 }

@@ -16,8 +16,6 @@ router.get("/", async (req, res) => {
 });
 
 router.post("/", async (req, res) => {
-  console.log("POST /api/destinations body:", req.body);
-
   const {
     name,
     description = null,
