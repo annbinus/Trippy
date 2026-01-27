@@ -1,4 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
+import palmTree from "../../assets/palmtree.png";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -27,8 +28,9 @@ export default function Navbar() {
 
   return (
     <nav className="navbar full-bleed bg-white shadow-md p-4 flex items-center justify-between">
-      <div className="flex items-center gap-4">
-        <Link to="/" className="text-xl font-bold">AI Travel Planner</Link>
+      <div className="flex items-center gap-2">
+        <img src={palmTree} alt="Palm tree" className="trippy-palm-navbar" />
+        <Link to="/" className="trippy-logo">Trippy</Link>
       </div>
 
       <div className="flex items-center gap-4">

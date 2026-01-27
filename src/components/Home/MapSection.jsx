@@ -47,10 +47,16 @@ export default function MapSection({ destinations, onSelect }) {
               longitude={dest.longitude}
               anchor="bottom"
             >
-              <div
+              <svg
+                className="map-marker-svg"
                 onClick={() => onSelect(dest)}
-                className="map-marker"
-              />
+                width="36" height="48" viewBox="0 0 36 48" fill="none" xmlns="http://www.w3.org/2000/svg"
+                style={{ cursor: 'pointer' }}
+              >
+                <path d="M18 2C9.163 2 2 9.163 2 18c0 9.94 13.09 27.364 13.393 27.74a2 2 0 0 0 3.214 0C20.91 45.364 34 27.94 34 18c0-8.837-7.163-16-16-16z" fill="#4A3F3A" stroke="#fff" strokeWidth="2"/>
+                <circle cx="18" cy="18" r="7" fill="#fff" fillOpacity="0.95"/>
+                <circle cx="18" cy="18" r="4" fill="#4A3F3A" fillOpacity="0.85"/>
+              </svg>
             </Marker>
           ))}
         </Map>

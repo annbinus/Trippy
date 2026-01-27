@@ -12,8 +12,8 @@ export default function Hero() {
       <div className="hero-inner">
         <div className="hero-content">
           <h1 className="hero-title">
-            <span className="block font-light">Time for your</span>
-            <span className="block font-semibold">next adventure</span>
+            <span className="block font-light hero-beige">Time for your</span>
+            <span className="block font-semibold hero-beige">next adventure</span>
           </h1>
 
           <p className="mb-8 text-lg md:text-2xl text-gray-200">

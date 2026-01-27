@@ -1,3 +1,44 @@
+/* Trippy logo font for navbar */
+@import url('https://fonts.googleapis.com/css2?family=Pacifico&display=swap');
+.trippy-logo {
+  font-family: 'Pacifico', cursive;
+  font-size: 1.7rem;
+  color: var(--beige);
+  letter-spacing: 2px;
+  text-shadow: 0 2px 12px rgba(59,47,47,0.10);
+  display: inline-block;
+  line-height: 1;
+}
+.trippy-palm-navbar {
+  width: 32px;
+  height: auto;
+  filter: brightness(0) saturate(100%) invert(94%) sepia(7%) saturate(355%) hue-rotate(13deg) brightness(104%) contrast(97%);
+  display: inline-block;
+  margin-left: -1.0rem;
+  margin-bottom: 0.2rem;
+}
+
+
+.trippy-hero-large {
+  font-size: 5.5rem;
+  margin-bottom: 6.5rem;
+  margin-top: 1.5rem;
+  text-align: center;
+}
+
+.trippy-palm {
+  width: 100px;
+  height: auto;
+  margin-bottom: -1.2rem;
+  filter: brightness(0) saturate(100%) invert(94%) sepia(7%) saturate(355%) hue-rotate(13deg) brightness(104%) contrast(97%);
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+/* Beige text for hero section */
+.hero-beige {
+  color: var(--beige) !important;
+}
 /* =============================
    COLOR VARIABLES
 ============================= */
@@ -409,8 +450,17 @@ h1, h2, h3 {
 
 /* Map section */
 .map-section { padding-left: 1rem; height: 100%; }
-.map-marker { width: 0.75rem; height: 0.75rem; background: #fb923c; border-radius: 9999px; cursor: pointer; transition: transform 0.12s; }
-.map-marker:hover { transform: scale(1.25); }
+.map-marker-svg {
+  width: 36px;
+  height: 48px;
+  z-index: 10;
+  transition: transform 0.12s, filter 0.12s;
+  filter: drop-shadow(0 0 6px #4A3F3A44);
+}
+.map-marker-svg:hover {
+  transform: scale(1.15) translateY(-2px);
+  filter: drop-shadow(0 0 16px #4A3F3A);
+}
 
 /* Ensure map column and its panels stretch to fill the main area */
 .map-section, .map-section .panel {
