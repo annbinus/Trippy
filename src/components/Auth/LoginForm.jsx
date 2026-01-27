@@ -46,10 +46,11 @@ export default function LoginForm() {
         />
         {errors.password && <span>{errors.password}</span>}
 
+        {errors.form && <span style={{ color: '#ef4444' }}>{errors.form}</span>}
         <button className="form-button">SIGN IN</button>
 
         <p>
-          Don’t have an account?{' '}
+          Dont have an account?{' '}
           <span onClick={() => navigate('/register')} className="underline-link">
             Register
           </span>

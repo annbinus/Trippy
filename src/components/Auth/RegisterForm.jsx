@@ -12,6 +12,7 @@ export default function RegisterForm() {
   const validateEmail = (email) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
+  const [success, setSuccess] = useState("");
   const handleSubmit = (e) => {
     e.preventDefault();
     const err = {};
@@ -24,11 +25,21 @@ export default function RegisterForm() {
       err.password = "Minimum 6 characters";
 
     setErrors(err);
+    setSuccess("");
 
     if (Object.keys(err).length === 0) {
       register(data.name, data.email, data.password)
-        .then(() => navigate('/login'))
-        .catch((errResp) => setErrors({ form: errResp.error || 'Registration failed' }));
+        .then(() => {
+          setSuccess("Registration successful! Redirecting to login...");
+          setTimeout(() => navigate('/login'), 1500);
+        })
+        .catch((errResp) => {
+          if (errResp && (errResp.error || "").toLowerCase().includes("already")) {
+            setErrors({ form: "User already registered" });
+          } else {
+            setErrors({ form: errResp.error || 'Registration failed' });
+          }
+        });
     }
   };
 
@@ -58,13 +69,15 @@ export default function RegisterForm() {
           onChange={(e) => setData({ ...data, password: e.target.value })}
         />
         {errors.password && <span>{errors.password}</span>}
+        {errors.form && <span style={{ color: '#ef4444' }}>{errors.form}</span>}
+  {success && <span style={{ color: 'var(--brown-primary)', fontWeight: 600 }}>{success}</span>}
 
         <button>CREATE ACCOUNT</button>
 
         <p>
           Already have an account?{" "}
           <span
-            onClick={() => navigate("/login")} // ✅ navigate on click
+            onClick={() => navigate("/login")}
             className="cursor-pointer underline"
           >
             Login
