@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import Hero from "./components/Hero";
 import Auth from "./components/Auth/Auth";
 import Home from "./components/Home/Home";
@@ -19,6 +20,7 @@ function App() {
         <Route path="/saved-itinerary/:itineraryId" element={<SavedItineraryPage />} />
         <Route path="/generate" element={<GenerateItinerary />} />
       </Routes>
+      <SpeedInsights />
     </Router>
   );
 }
