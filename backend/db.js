@@ -1,13 +1,16 @@
 import pkg from "pg";
 const { Pool } = pkg;
 
-const pool = new Pool({
-  user: process.env.DB_USER || "travel_user",
-  host: process.env.DB_HOST || "localhost",
-  database: process.env.DB_DATABASE || "travel_db",
-  password: process.env.DB_PASSWORD || "password123",
-  port: process.env.DB_PORT || 5432,
-});
+const pool = new Pool(process.env.DATABASE_URL
+    ? { connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }
+    : {
+        user: process.env.DB_USER,
+        host: process.env.DB_HOST,
+        database: process.env.DB_DATABASE,
+        password: process.env.DB_PASSWORD,
+        port: process.env.DB_PORT,
+      }
+    );
 
 // Test connection
 pool.on("connect", () => {
